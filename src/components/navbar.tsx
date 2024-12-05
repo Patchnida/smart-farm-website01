@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-// import Calendar from 'react-calendar';
-// import 'react-calendar/dist/Calendar.css';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
 import { useDate } from '../utils/DataContext';
 
 import Notification from './notification';
