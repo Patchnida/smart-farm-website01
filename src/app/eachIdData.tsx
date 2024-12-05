@@ -1,6 +1,6 @@
 export const initialData = [
     {
-      date: "Wednesday, December 4, 2024",
+      date: "2024/45/44",
       time: "00.00",
       detail: [
         { id: "0001", temp: "20", humid: "60", moisture: "59", disease: "เป็นโรคใบจุดตากบ", npk: { nitrogen: 201, phosphorus: 10, potassium: 78 } },

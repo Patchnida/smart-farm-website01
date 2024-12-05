@@ -1,3 +1,5 @@
+import { axiosInstance } from "@/lib/axiosInstance";
+import axios from "axios";
 import { ReactNode } from "react";
 
 interface PopUpProps {

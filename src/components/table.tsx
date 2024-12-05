@@ -8,10 +8,8 @@ import {
     isHumidOutOfRange,
     isMoistureOutOfRange,
     isDiseaseDetected,
-    isNitrogenOutOfRange,
-    isPhosphorusOutOfRange,
-    isPotassiumOutOfRange,
 } from "@/utils/validation";
+import { axiosInstance } from "@/lib/axiosInstance";
 
 const flattenData = (data: typeof initialData, selectedTime: string) => {
     const selectedEntry = data.find((entry) => entry.time === selectedTime);
@@ -31,7 +29,7 @@ function Table({
     selectedTime: string;
     setSelectedTime: (time: string) => void;
 }) {
-    const [data, setData] = useState(initialData);
+    const [data, setData] = useState([]);
     const [filteredData, setFilteredData] = useState(flattenData(initialData, selectedTime));
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
@@ -42,19 +40,23 @@ function Table({
     const [idToDelete, setIdToDelete] = useState<string | null>(null);
 
     const [newEntry, setNewEntry] = useState({
-        id: "",
-        temp: "",
-        humid: "",
-        moisture: "",
-        disease: "",
+        iot_id: '',
+        status_iot: true,
     });
 
-    // Update filteredData whenever selectedTime changes
     useEffect(() => {
         setFilteredData(flattenData(data, selectedTime));
     }, [selectedTime, data]);
 
-    // Filter rows based on search term
+    const fetchData = async () => {
+        try {
+            const response = await axiosInstance.get('/api/getIot');
+            setData(response.data);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
     const searchedRows = filteredData.filter((row) =>
         row.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -75,17 +77,21 @@ function Table({
         }
     };
 
-    const handleSave = () => {
-        setData((prevData) => {
-            const updatedData = [...prevData];
-            const entryIndex = updatedData.findIndex((entry) => entry.time === selectedTime);
-            if (entryIndex >= 0) {
-                updatedData[entryIndex].detail = [...updatedData[entryIndex].detail, newEntry];
-            }
-            return updatedData;
-        });
-        setNewEntry({ id: "", temp: "", humid: "", moisture: "", disease: "" });
-        setIsPopUpOpen(false);
+    const handleSave = async () => {
+        try {
+            await axiosInstance
+                .post('/api/addIot', newEntry)
+                .then((res) => {
+                    console.log(res);
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+
+            setIsPopUpOpen(false);
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,21 +104,17 @@ function Table({
         setIsDeletePopUpOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (idToDelete) {
-            setData((prevData) => {
-                const updatedData = [...prevData];
-                const entryIndex = updatedData.findIndex((entry) => entry.time === selectedTime);
-                if (entryIndex >= 0) {
-                    updatedData[entryIndex].detail = updatedData[entryIndex].detail.filter(
-                        (row) => row.id !== idToDelete
-                    );
-                }
-                return updatedData;
-            });
-            setIdToDelete(null);
+            try {
+                await axiosInstance.delete(`/api/deleteIot/${idToDelete}`);
+                await fetchData();
+            } catch (error) {
+                console.error("Error deleting entry:", error.message || error);
+            }
         }
         setIsDeletePopUpOpen(false);
+        setIdToDelete(null);
     };
 
     const handleCancelDelete = () => {
@@ -139,89 +141,98 @@ function Table({
                     </button>
                 </div>
             </div>
-            <table className="w-full bg-white border border-gray-200 text-center">
-                <thead>
-                    <tr className="bg-gray-100 border-b border-gray-200">
-                        <th className="py-3 px-4 font-semibold text-gray-600">ID</th>
-                        <th className="py-3 px-4 font-semibold text-gray-600">อุณหภูมิ</th>
-                        <th className="py-3 px-4 font-semibold text-gray-600">ความชื้นในอากาศ</th>
-                        <th className="py-3 px-4 font-semibold text-gray-600">ความชื้นในดิน</th>
-                        <th className="py-3 px-4 font-semibold text-gray-600">ความเสี่ยงในการเกิดโรค</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {currentRows.map((row) => (
-                        <tr key={row.id} className="border-b border-gray-200">
-                            <td className="py-3 px-4 text-gray-700">
-                                <Link href={`/detail/${row.id}`}>{row.id}</Link>
-                            </td>
-                            <td
-                                className={`py-3 px-4 ${
-                                    isTempOutOfRange(row.temp)
-                                        ? "text-red-500 font-semibold"
-                                        : "text-green-500 font-semibold"
-                                }`}
-                            >
-                                {row.temp} °C
-                            </td>
-                            <td
-                                className={`py-3 px-4 ${
-                                    isHumidOutOfRange(row.humid)
-                                        ? "text-red-500 font-semibold"
-                                        : "text-green-500 font-semibold"
-                                }`}
-                            >
-                                {row.humid} %
-                            </td>
-                            <td
-                                className={`py-3 px-4 ${
-                                    isMoistureOutOfRange(row.moisture)
-                                        ? "text-red-500 font-semibold"
-                                        : "text-green-500 font-semibold"
-                                }`}
-                            >
-                                {row.moisture} %
-                            </td>
-                            <td
-                                className={`py-3 px-4 ${
-                                    isDiseaseDetected(row.disease)
-                                        ? "text-red-500 font-semibold"
-                                        : "text-green-500 font-semibold"
-                                }`}
-                            >
-                                {row.disease}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
 
-            {searchedRows.length > rowsPerPage && (
-                <div className="flex justify-between items-center mt-4">
-                    <button
-                        onClick={prevPage}
-                        className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
-                        disabled={currentPage === 1}
-                    >
-                        หน้าก่อนหน้า
-                    </button>
-                    <span className="text-gray-700">หน้าที่ {currentPage}</span>
-                    <button
-                        onClick={nextPage}
-                        className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
-                        disabled={indexOfLastRow >= searchedRows.length}
-                    >
-                        หน้าถัดไป
-                    </button>
+            {data.length === 0 ? (
+                <div className="text-center mt-10 text-gray-500">
+                    No data available for the selected time.
                 </div>
+            ) : (
+                <>
+                    <table className="w-full bg-white border border-gray-200 text-center">
+                        <thead>
+                            <tr className="bg-gray-100 border-b border-gray-200">
+                                <th className="py-3 px-4 font-semibold text-gray-600">ID</th>
+                                <th className="py-3 px-4 font-semibold text-gray-600">อุณหภูมิ</th>
+                                <th className="py-3 px-4 font-semibold text-gray-600">ความชื้นในอากาศ</th>
+                                <th className="py-3 px-4 font-semibold text-gray-600">ความชื้นในดิน</th>
+                                <th className="py-3 px-4 font-semibold text-gray-600">ความเสี่ยงในการเกิดโรค</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentRows.map((row) => (
+                                <tr key={row.id} className="border-b border-gray-200">
+                                    <td className="py-3 px-4 text-gray-700">
+                                        <Link href={`/detail/${row.id}`}>{row.id}</Link>
+                                    </td>
+                                    <td
+                                        className={`py-3 px-4 ${
+                                            isTempOutOfRange(row.temp)
+                                                ? "text-red-500 font-semibold"
+                                                : "text-green-500 font-semibold"
+                                        }`}
+                                    >
+                                        {row.temp} °C
+                                    </td>
+                                    <td
+                                        className={`py-3 px-4 ${
+                                            isHumidOutOfRange(row.humid)
+                                                ? "text-red-500 font-semibold"
+                                                : "text-green-500 font-semibold"
+                                        }`}
+                                    >
+                                        {row.humid} %
+                                    </td>
+                                    <td
+                                        className={`py-3 px-4 ${
+                                            isMoistureOutOfRange(row.moisture)
+                                                ? "text-red-500 font-semibold"
+                                                : "text-green-500 font-semibold"
+                                        }`}
+                                    >
+                                        {row.moisture} %
+                                    </td>
+                                    <td
+                                        className={`py-3 px-4 ${
+                                            isDiseaseDetected(row.disease)
+                                                ? "text-red-500 font-semibold"
+                                                : "text-green-500 font-semibold"
+                                        }`}
+                                    >
+                                        {row.disease}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    {searchedRows.length > rowsPerPage && (
+                        <div className="flex justify-between items-center mt-4">
+                            <button
+                                onClick={prevPage}
+                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                                disabled={currentPage === 1}
+                            >
+                                หน้าก่อนหน้า
+                            </button>
+                            <span className="text-gray-700">หน้าที่ {currentPage}</span>
+                            <button
+                                onClick={nextPage}
+                                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                                disabled={indexOfLastRow >= searchedRows.length}
+                            >
+                                หน้าถัดไป
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
 
             <PopupAddID isOpen={isPopUpOpen} onClose={() => setIsPopUpOpen(false)} onSave={handleSave}>
                 <input
-                    name="id"
+                    name="iot_id"
                     type="text"
                     placeholder="เพิ่ม ID ใหม่"
-                    value={newEntry.id}
+                    value={newEntry.iot_id}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 mb-4"
                 />
