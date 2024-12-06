@@ -12,71 +12,51 @@ import {
 } from "recharts";
 import { MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 import { axiosInstance } from "@/lib/axiosInstance";
-import { useDate } from "@/utils/DataContext";
 
-type IoTData = {
-    id: number;
-    temp: number;
-    humid: number;
-    moisture: number;
-};
-
-const flattenData = (data: any[], selectedTime: string): IoTData[] => {
-    if (!Array.isArray(data)) {
-        console.error("Expected an array, but received:", data);
-        return [];
-    }
-
-    const selectedEntry = data.find((entry) => entry.time === selectedTime);
-    if (!selectedEntry || !selectedEntry.detail || !Array.isArray(selectedEntry.detail)) {
-        console.warn(
-            "No matching entry found or invalid detail structure for the selected time:",
-            selectedTime
-        );
-        return [];
-    }
-
-    return selectedEntry.detail.map((item: any) => ({
-        id: item.id,
-        temp: parseFloat(item.temp?.replace("°C", "") || "0"),
-        humid: parseFloat(item.humid?.replace("%", "") || "0"),
-        moisture: parseFloat(item.moisture?.replace("%", "") || "0"),
+const transformData = (data) => {
+    return data.map((item, index) => ({
+        id: index + 1,
+        temp: item.temperature_id?.value || 0,
+        humid: item.air_humidity_id?.value || 0, 
+        moisture: item.soil_moisture_id?.value || 0, 
     }));
 };
 
-function Graph() {
-    const { selectedTime, setSelectedTime } = useDate();
-    const [dataType, setDataType] = useState<"temp" | "humid" | "moisture">("temp");
-    const [data, setData] = useState<IoTData[]>([]);
+function Graph({
+    selectedTime,
+    setSelectedTime,
+}: {
+    selectedTime: string;
+    setSelectedTime: (time: string) => void;
+}) {
+    const [dataType, setDataType] = useState<string>("temp");
+    const [data, setData] = useState<any[]>([]);
 
     const fetchData = async () => {
         try {
             const response = await axiosInstance.get("/api/getByLogger");
-            console.log("Raw API Response:", response.data);
+            // console.log("Raw API Response:", response.data);
 
-            const processedData = flattenData(response.data, selectedTime);
-            console.log("Processed Data:", processedData);
+            const transformedData = transformData(response.data);
+            // console.log("Transformed Data for Chart:", transformedData);
 
-            setData(processedData);
+            setData(transformedData);
         } catch (error) {
             console.error("Error fetching IoT data:", error);
+            setData([]);
         }
     };
 
     useEffect(() => {
-        if (selectedTime) {
-            fetchData();
-        } else {
-            console.warn("Selected time is not set.");
-        }
+        fetchData();
     }, [selectedTime]);
+
+    const handleDataTypeChange = (type: string) => {
+        setDataType(type);
+    };
 
     const handleTimeChange = (event: React.ChangeEvent<{ value: unknown }>) => {
         setSelectedTime(event.target.value as string);
-    };
-
-    const handleDataTypeChange = (type: "temp" | "humid" | "moisture") => {
-        setDataType(type);
     };
 
     return (
@@ -113,23 +93,9 @@ function Graph() {
                                 margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                             >
                                 <defs>
-                                    <linearGradient
-                                        id="color"
-                                        x1="0"
-                                        y1="0"
-                                        x2="0"
-                                        y2="1"
-                                    >
-                                        <stop
-                                            offset="5%"
-                                            stopColor="#4caf50"
-                                            stopOpacity={0.8}
-                                        />
-                                        <stop
-                                            offset="95%"
-                                            stopColor="#4caf50"
-                                            stopOpacity={0}
-                                        />
+                                    <linearGradient id="color" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#4caf50" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#4caf50" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <XAxis
@@ -167,6 +133,7 @@ function Graph() {
                     </div>
                 )}
 
+                {/* Data Type Buttons */}
                 <div className="flex flex-col ml-4 space-y-2">
                     {["temp", "humid", "moisture"].map((type) => (
                         <button
@@ -178,11 +145,7 @@ function Graph() {
                                     : "bg-gray-200 hover:bg-gray-300 font-semibold"
                             }`}
                         >
-                            {type === "temp"
-                                ? "อุณหภูมิ"
-                                : type === "humid"
-                                ? "ความชื้นในอากาศ"
-                                : "ความชื้นในดิน"}
+                            {type === "temp" ? "อุณหภูมิ" : type === "humid" ? "ความชื้นในอากาศ" : "ความชื้นในดิน"}
                         </button>
                     ))}
                 </div>

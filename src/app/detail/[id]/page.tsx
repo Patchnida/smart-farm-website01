@@ -1,37 +1,45 @@
-'use client';
+'use client'
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useDate } from "@/utils/DataContext";
-import { initialData } from "@/app/eachIdData";
-import Link from "next/link";
-import Button from '@mui/material/Button';
-
 import PopupDisease from "@/components/popUpDisease";
-import { historyData } from './../../eachIdData';
-import { isTempOutOfRange,
+import Button from '@mui/material/Button';
+import { axiosInstance } from "@/lib/axiosInstance";
+import {
+    isTempOutOfRange,
     getTempAdvice,
     isHumidOutOfRange,
+    getHumidAdvice,
     isMoistureOutOfRange,
-    isDiseaseDetected,
+    getMoistureAdvice,
     isNitrogenOutOfRange,
     isPhosphorusOutOfRange,
     isPotassiumOutOfRange,
-    getHumidAdvice,
-    getMoistureAdvice,
     getNitrogenAdvice,
     getPhosphorusAdvice,
-    getPotassiumAdvice, } from "@/utils/validation";
+    getPotassiumAdvice,
+} from "@/utils/validation";
 
 const Detail: React.FC = () => {
     const { id } = useParams();
-    const { selectedTime } = useDate(); // Access selectedTime from context
+    const { selectedTime } = useDate();
     const [isPopupOpen, setIsPopupOpen] = useState(false);
-    const [searchDate, setSearchDate] = useState("");
+    const [detailData, setDetailData] = useState<any>(null);
 
-    if (!id || !initialData[0]) return <p>ข้อมูลไม่พบสำหรับ ID นี้</p>;
+    useEffect(() => {
+        const fetchEachID = async () => {
+            try {
+                const response = await axiosInstance.get(`/api/getLoggerByID/${id}`);
+                console.log("Raw API Response:", response.data);
+                setDetailData(response.data);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
 
-    const detailData = initialData[0].detail.find(detail => detail.id === id);
+        fetchEachID();
+    }, [id]);
 
     if (!detailData) {
         return <p>ข้อมูลไม่พบสำหรับ ID นี้</p>;
@@ -44,7 +52,7 @@ const Detail: React.FC = () => {
         const dayNames = ["วันอาทิตย์", "วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์"];
         const monthNames = [
             "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-            "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+            "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
         ];
 
         const dayName = dayNames[date.getDay()];
@@ -58,130 +66,119 @@ const Detail: React.FC = () => {
     const handleOpenPopup = () => setIsPopupOpen(true);
     const handleClosePopup = () => setIsPopupOpen(false);
 
-    const currentHistory = historyData.find(data => data.id === id)?.history || [];
-
-    const filteredHistory = currentHistory.filter(record => 
-        formatDateToThai(record.date).includes(searchDate)
-    );
-
     return (
-        <div className="grid grid-rows-[20px_1fr_20px] h-full">      
+        <div className="grid grid-rows-[20px_1fr_20px] h-full">
             <div className="flex flex-col w-full h-fit items-center">
                 <div className="w-11/12 h-5/6 mt-5 p-10 bg-white rounded-lg shadow-sm">
-                   <div className="flex flex-col gap-2 mb-5">
+                    <div className="flex flex-col gap-2 mb-5">
                         <p className="text-3xl font-bold">
-                            {formatDateToThai(initialData[0].date)}
+                            {detailData.date ? formatDateToThai(detailData.date) : "ข้อมูลไม่พบ"}
                         </p>
-                        <p className="text-2xl font-medium text-sky-700">
-                            เวลา {selectedTime} น.
-                        </p>
-                        </div>
-                            <p className="font-semibold text-lg mt-2">ID {detailData.id}</p>
+                        <p className="text-2xl font-medium text-sky-700">เวลา {selectedTime} น.</p>
+                    </div>
+                    <p className="font-semibold text-lg mt-2">ID {detailData.iot_id || "N/A"}</p>
 
-                            <div className="flex flex-wrap gap-5 mt-5 h-full">
-                                {/* อุณหภูมิในดิน */}
-                                <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
-                                    <div className="flex justify-between w-full">
-                                        <div className="flex flex-col gap-2">
-                                            <p className="text-2xl font-bold">อุณหภูมิในดิน</p>
-                                            <p>ควรอยู่ระหว่าง 20-30 °C</p>
-                                            <p className="my-5">
-                                                ค่าปัจจุบัน : 
-                                                <span
-                                                    className={`text-3xl font-semibold ml-10 ${
-                                                        isTempOutOfRange(parseFloat(detailData.temp))
-                                                            ? "text-red-500"
-                                                            : "text-green-500"
-                                                    }`}
-                                                >
-                                                    {detailData.temp} °C
-                                                </span>
-                                            </p>
-                                            <p className="mt-2">
-                                                คำแนะนำ : {getTempAdvice(parseFloat(detailData.temp))}
-                                            </p>
-                                        </div>
-                                        <img src="/temIcon.png" alt="Temperature Icon" className="w-fit h-fit cursor-pointer" />
-                                    </div>
-                                
+                    <div className="flex flex-wrap gap-5 mt-5 h-full">
+                        {/* Temperature Section */}
+                        <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
+                            <div className="flex justify-between w-full">
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-2xl font-bold">อุณหภูมิในดิน</p>
+                                    <p>ควรอยู่ระหว่าง 20-30 °C</p>
+                                    <p className="my-5">
+                                        ค่าปัจจุบัน:{" "}
+                                        <span
+                                            className={`text-3xl font-semibold ${
+                                                isTempOutOfRange(parseFloat(detailData?.temperature_id?.value || 0))
+                                                    ? "text-red-500"
+                                                    : "text-green-500"
+                                            }`}
+                                        >
+                                            {detailData?.air_humidity_id?.value || "ไม่มีข้อมูล"} °C
+                                        </span>
+                                    </p>
+                                    <p className="mt-2">
+                                        คำแนะนำ: {getTempAdvice(parseFloat(detailData?.temperature_id.value || 0))}
+                                    </p>
                                 </div>
+                                <img src="/temIcon.png" alt="Temperature Icon" className="w-fit h-fit cursor-pointer" />
+                            </div>
+                        </div>
 
-                        {/* ความชื้นในอากาศ */}
-                        <div
-                         className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
+                        {/* Air Humidity Section */}
+                        <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
                             <div className="flex justify-between w-full">
                                 <div className="flex flex-col gap-2">
                                     <p className="text-2xl font-bold">ความชื้นในอากาศ</p>
                                     <p>ควรอยู่ระหว่าง 60-80 %</p>
                                     <p className="my-5">
-                                        ค่าปัจจุบัน : 
-                                            <span
-                                                className={`text-3xl font-semibold ml-10 ${
-                                                    isHumidOutOfRange(parseFloat(detailData.humid))
-                                                        ? "text-red-500"
-                                                        : "text-green-500"
-                                                }`}
-                                            >
-                                                {detailData.humid} %
-                                            </span>
-                                    </p>
-                                    <p className="mt-2">
-                                        คำแนะนำ : {getHumidAdvice(parseFloat(detailData.humid))}
-                                    </p>
-                                </div>
-                                <img src="/humidIcon.png" alt="Humid Icon" className="w-fit h-fit cursor-pointer" />
-                            </div>
-                        </div>
-
-                        {/* ความชื้นในดิน */}
-                        <div
-                         className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
-                            <div className="flex justify-between w-full">
-                                <div className="flex flex-col gap-2">
-                                <p className="text-2xl font-bold">ความชื้นในดิน</p>
-                                <p>ควรอยู่ระหว่าง 60-70 %</p>
-                                <p className="my-5">
-                                    ค่าปัจจุบัน : 
+                                        ค่าปัจจุบัน:{" "}
                                         <span
-                                            className={`text-3xl font-semibold ml-10 ${
-                                                isMoistureOutOfRange(parseFloat(detailData.moisture))
+                                            className={`text-3xl font-semibold ${
+                                                isHumidOutOfRange(parseFloat(detailData?.air_humidity_id?.value || 0))
                                                     ? "text-red-500"
                                                     : "text-green-500"
                                             }`}
                                         >
-                                            {detailData.moisture} %
+                                            {detailData?.air_humidity_id?.value || "ไม่มีข้อมูล"} %
                                         </span>
-                                </p>
-                                <p className="mt-2">
-                                    คำแนะนำ : {getMoistureAdvice(parseFloat(detailData.moisture))}
-                                </p>
+                                    </p>
+                                    <p className="mt-2">
+                                        คำแนะนำ: {getHumidAdvice(parseFloat(detailData?.air_humidity_id?.value || 0))}
+                                    </p>
                                 </div>
-                                <img src="/moisIcon.png" alt="Moisture Icon" className="w-fit h-fit cursor-pointer" />
+                                <img src="/humidIcon.png" alt="Humidity Icon" className="w-fit h-fit cursor-pointer" />
                             </div>
                         </div>
 
-                        {/* ความเสี่ยงในการเป็นโรค */}
-                        <div
-                         className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
+                        {/* Soil Moisture Section */}
+                        <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
+                            <div className="flex justify-between w-full">
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-2xl font-bold">ความชื้นในดิน</p>
+                                    <p>ควรอยู่ระหว่าง 40-70 %</p>
+                                    <p className="my-5">
+                                        ค่าปัจจุบัน:{" "}
+                                        <span
+                                            className={`text-3xl font-semibold ${
+                                                isMoistureOutOfRange(parseFloat(detailData?.soil_moisture_id?.value || 0))
+                                                    ? "text-red-500"
+                                                    : "text-green-500"
+                                            }`}
+                                        >
+                                            {detailData?.soil_moisture_id?.value || "ไม่มีข้อมูล"} %
+                                        </span>
+                                    </p>
+                                    <p className="mt-2">
+                                        คำแนะนำ: {getMoistureAdvice(parseFloat(detailData?.soil_moisture_id?.value || 0))}
+                                    </p>
+                                </div>
+                                <img src="/moisIcon.png" alt="Soil Moisture Icon" className="w-fit h-fit cursor-pointer" />
+                            </div>
+                        </div>
+
+                        {/* Disease Detection Section */}
+                        <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
                             <div className="flex justify-between w-full">
                                 <div className="flex flex-col gap-2 w-8/12 mb-5">
                                     <p className="text-2xl font-bold">การเกิดโรค</p>
                                     <p>ตรวจสอบการเกิดโรค 4 โรค ได้แก่ โรคใบเหลือง โรคใบม้วน โรคใบจุดตากบ และแมลงหวี่ขาว</p>
-                                    <div className="flex justify-center items-center my-5">
+                                    <p className="my-5">
+                                        โรคที่พบ:{" "}
                                         <span
-                                            className={`text-3xl font-semibold text-center ${
-                                                isDiseaseDetected(detailData.disease)
+                                            className={`text-3xl font-semibold ${
+                                                detailData?.diseasePredict_id?.DiseaseName
                                                     ? "text-red-500"
                                                     : "text-green-500"
                                             }`}
                                         >
-                                            {detailData.disease}
+                                            {detailData?.diseasePredict_id?.DiseaseName || "ไม่มีข้อมูล"}
                                         </span>
-                                    </div>
+                                    </p>
                                 </div>
                                 <img src="/diseaseIcon.png" alt="Disease Icon" className="w-fit h-fit cursor-pointer" />
                             </div>
-                            <p>คำแนะนำ : ใช้สารประเภทคลอโรธาโรนิล (chlorothalonil) ฉีด พ่นสม่าเสมอขณะระบาด จะได้ผลดี</p>
+                            <p>คำแนะนำ : ต้องดึงมา</p>
                             <div className="flex justify-end mt-2">
                                 <Button
                                 onClick={handleOpenPopup}
@@ -191,9 +188,8 @@ const Detail: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* NPK Section */}
                         <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
-                            
-                            
                             <div className="flex justify-between w-full">
                                 
                                 <div className="flex flex-col w-full lg:w-10/12">
@@ -210,17 +206,17 @@ const Detail: React.FC = () => {
                                                 ค่าปัจจุบัน : 
                                                 <span
                                                     className={`text-3xl font-semibold ml-10 ${
-                                                        isNitrogenOutOfRange(detailData.npk.nitrogen)
+                                                        isNitrogenOutOfRange(detailData?.nitrogen_id?.value)
                                                             ? "text-red-500"
                                                             : "text-green-500"
                                                     }`}
                                                 >
-                                                    {detailData.npk.nitrogen} มก./ล.
+                                                    {detailData?.nitrogen_id?.value} มก./ล.
                                                 </span>
                                             </p>
 
                                             <p className="mt-2">
-                                                คำแนะนำ : {getNitrogenAdvice(detailData.npk.nitrogen)}
+                                                คำแนะนำ : {getNitrogenAdvice(detailData?.nitrogen_id?.value)}
                                             </p>
                                         </div>
 
@@ -234,17 +230,17 @@ const Detail: React.FC = () => {
                                                 ค่าปัจจุบัน : 
                                                 <span
                                                     className={`text-3xl font-semibold ml-10 ${
-                                                        isPhosphorusOutOfRange(detailData.npk.phosphorus)
+                                                        isPhosphorusOutOfRange(detailData?.phosphorus_id?.value)
                                                             ? "text-red-500"
                                                             : "text-green-500"
                                                     }`}
                                                 >
-                                                    {detailData.npk.phosphorus} มก./ล.
+                                                    {detailData?.phosphorus_id?.value} มก./ล.
                                                 </span>
                                             </p>
 
                                             <p className="mt-2">
-                                                คำแนะนำ : {getPhosphorusAdvice(detailData.npk.phosphorus)}
+                                                คำแนะนำ : {getPhosphorusAdvice(detailData?.phosphorus_id?.value)}
                                             </p>
                                         </div>
 
@@ -256,17 +252,17 @@ const Detail: React.FC = () => {
                                                 ค่าปัจจุบัน : 
                                                 <span
                                                     className={`text-3xl font-semibold ml-10 ${
-                                                        isPotassiumOutOfRange(detailData.npk.potassium)
+                                                        isPotassiumOutOfRange(detailData?.potassium_id?.value)
                                                             ? "text-red-500"
                                                             : "text-green-500"
                                                     }`}
                                                 >
-                                                    {detailData.npk.potassium} มก./ล.
+                                                    {detailData?.potassium_id?.value} มก./ล.
                                                 </span>
                                             </p>
 
                                             <p className="mt-2">
-                                                คำแนะนำ : {getPotassiumAdvice(detailData.npk.potassium)}
+                                                คำแนะนำ : {getPotassiumAdvice(detailData?.potassium_id?.value)}
                                             </p>
                                         </div>
 
@@ -279,49 +275,16 @@ const Detail: React.FC = () => {
                             </div>
                             
                         </div> 
-                            
-                        </div>
+                        
+                    </div>
                 </div>
             </div>
 
             <PopupDisease isOpen={isPopupOpen} onClose={handleClosePopup}>
-                <div className="flex flex-col max-h-96 overflow-y-auto">
-                    <div className="mb-4">
-                        <input
-                            type="text"
-                            value={searchDate}
-                            onChange={(e) => setSearchDate(e.target.value)}
-                            placeholder="Search by Date"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 "
-                        />
-                    </div>
-                    {filteredHistory.length > 0 ? (
-                        filteredHistory.map((record, index) => (
-                            <div key={index} className="flex justify-between border gap-5 p-5">
-                                <div className="w-6/12 h-full">
-                                    <p className="mb-2 text-2xl font-semibold">{formatDateToThai(record.date)}</p>
-                                    <p className="mb-2 text-sky-700">เวลา {record.time} น.</p>
-                                    <div className="w-full h-full mb-2 py-10">
-                                        <p className={`${record.status === "ปกติ" ? "text-green-500" : "text-red-500"} text-center text-2xl font-semibold`}>
-                                            {record.status}
-                                        </p>
-                                    </div>
-                                    <p>คำแนะนำ : {record.recomment}</p>
-                                </div>
-                                <div className="w-6/12 h-full">
-                                    <img src={record.image} alt="Disease image" className="w-full h-auto" />
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-gray-500">ไม่มีข้อมูลประวัติย้อนหลัง</p>
-                    )}
-                </div>
+                <p>ประวัติย้อนหลัง</p>
             </PopupDisease>
-
-
         </div>
     );
-}
+};
 
 export default Detail;
