@@ -29,10 +29,14 @@ function PopupAddID({ isOpen, onClose, onSave, children }: PopUpProps) {
                     </button>
                     <button 
                         onClick={onSave} 
+                        type="button" 
                         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                     >
                         บันทึก
                     </button>
+
+
+
                 </div>
             </div>
         </div>

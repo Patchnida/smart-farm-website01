@@ -9,6 +9,8 @@ import {
     isPhosphorusOutOfRange,
     isPotassiumOutOfRange,
 } from "@/utils/validation";
+import PopupAddID from "./popUpAddID";
+import PopUpDelete from "./popUpDelete";
 
 import { axiosInstance } from "@/lib/axiosInstance";
 
@@ -28,20 +30,35 @@ const transformData = (data) => {
     }));
 };
 
-function Table() {
+function Table({ onClose }) {
     const [data, setData] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 10;
 
+    const [isPopUpOpen, setIsPopUpOpen] = useState(false);
+    const [isDeletePopUpOpen, setIsDeletePopUpOpen] = useState(false);
+    const [idToDelete, setIdToDelete] = useState<string | null>(null);
+
+    const [newEntry, setNewEntry] = useState({
+        id: "",
+        transID: "",
+        temp: 0,
+        humid: 0,
+        moisture: 0,
+        disease: "ไม่พบ",
+        npk: {
+            nitrogen: 0,
+            phosphorus: 0,
+            potassium: 0,
+        },
+    });
+    
+
     const fetchData = async () => {
         try {
             const response = await axiosInstance.get("/api/getByLogger");
-            console.log("Raw API Response:", response.data);
-
             const transformedData = transformData(response.data);
-            console.log("Transformed Data for Table:", transformedData);
-
             setData(transformedData);
         } catch (error) {
             console.error("Error fetching data:", error);
@@ -51,10 +68,6 @@ function Table() {
     useEffect(() => {
         fetchData();
     }, []);
-
-    const openDeletePopup = (id) => {
-        console.log(`Delete popup opened for ID: ${id}`);
-    };
 
     const searchedRows = data.filter((row) =>
         row.id.toString().startsWith(searchTerm)
@@ -76,16 +89,59 @@ function Table() {
         }
     };
 
+    const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        console.log("Save button clicked");
+    
+        try {
+            const validEntry = {
+                temperature_id: { value: newEntry.temp },
+                air_humidity_id: { value: newEntry.humid },
+                soil_moisture_id: { value: newEntry.moisture },
+                nitrogen_id: { value: newEntry.npk.nitrogen },
+                phosphorus_id: { value: newEntry.npk.phosphorus },
+                potassium_id: { value: newEntry.npk.potassium },
+                disease: newEntry.disease,
+                date: new Date().toISOString(),
+            };
+    
+            console.log("Payload:", validEntry);
+            const response = await axiosInstance.post("/api/addLogger", validEntry);
+    
+            console.log("API Response:", response.data);
+    
+            if (response && response.data) {
+                setData((prevData) => [...prevData, response.data]);
+                setIsPopUpOpen(false);
+            }
+        } catch (error) {
+            console.error("Error saving data:", error.response?.data || error.message);
+        }
+    };
+    
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setNewEntry((prev) => ({ ...prev, [name]: value }));
+    };
+
     return (
         <div className="w-full">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-gray-800">ข้อมูล IoT</h2>
-                <input
-                    type="text"
-                    placeholder="ค้นหาด้วย ID"
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+                <div className="flex gap-5">
+                    <input
+                        type="text"
+                        placeholder="ค้นหาด้วย ID"
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <button
+                        className="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-600"
+                        onClick={() => setIsPopUpOpen(true)} 
+                    >
+                            เพิ่ม ID ใหม่
+                    </button>
+                </div>
             </div>
 
             {data.length === 0 ? (
@@ -192,13 +248,6 @@ function Table() {
                                 >
                                     {row.npk.potassium} มก./ล.
                                 </td>
-
-                                <td
-                                    className="py-3 px-4 text-red-500 font-semibold cursor-pointer hover:underline"
-                                    onClick={() => openDeletePopup(row.id)}
-                                >
-                                    ลบ
-                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -224,6 +273,21 @@ function Table() {
                     </button>
                 </div>
             )}
+
+            <PopupAddID 
+                isOpen={isPopUpOpen} 
+                onClose={() => setIsPopUpOpen(false)} 
+                onSave={handleSave}
+            >
+                <input
+                    name="id"
+                    type="text"
+                    placeholder="เพิ่ม ID ใหม่"
+                    value={newEntry.id}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 mb-4"
+                />
+            </PopupAddID>
         </div>
     );
 }
