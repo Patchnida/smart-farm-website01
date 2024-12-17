@@ -41,11 +41,14 @@ const transformData = (data) => {
 
 const Detail: React.FC = () => {
     const { id } = useParams();
-    const searchParams = useSearchParams();
     const { selectedTime } = useDate();
     const [isPopupOpen, setIsPopupOpen] = useState(false);
     const [detailData, setDetailData] = useState<any>(null);
     const [data, setData] = useState([]);
+
+    const searchParams = useSearchParams();
+    const transID = searchParams.get("transID");
+
 
 
     useEffect(() => {
@@ -115,7 +118,9 @@ const Detail: React.FC = () => {
                         </p>
                         <p className="text-2xl font-medium text-sky-700">เวลา {selectedTime} น.</p>
                     </div>
-                    <p className="font-semibold text-lg mt-2">ID {detailData._id || "N/A"}</p>
+                    <p className="font-semibold text-lg mt-2">
+                        ID {transID || detailData._id || "N/A"}
+                    </p>
 
                     <div className="flex flex-wrap gap-5 mt-5 h-full">
                     

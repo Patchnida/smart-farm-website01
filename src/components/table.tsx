@@ -15,7 +15,7 @@ import { axiosInstance } from "@/lib/axiosInstance";
 const transformData = (data) => {
     return data.map((item, index) => ({
         id: item._id,
-        transID: index + 1, 
+        transID: String(index + 1).padStart(4, "0"), 
         temp: item.temperature_id?.value || 0,
         humid: item.air_humidity_id?.value || 0,
         moisture: item.soil_moisture_id?.value || 0,
@@ -118,7 +118,9 @@ function Table() {
                         {currentRows.map((row) => (
                             <tr key={row.id} className="border-b border-gray-200">
                                 <td className="py-3 px-4 text-gray-700">
-                                    <Link href={`/detail/${row.id}`}>{row.transID}</Link>
+                                <Link href={{ pathname: `/detail/${row.id}`, query: { transID: row.transID } }}>
+                                    {row.transID}
+                                </Link>
                                 </td>
 
                                 <td
