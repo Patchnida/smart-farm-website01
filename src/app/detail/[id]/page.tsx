@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useDate } from "@/utils/DataContext";
+import { useSearchParams } from "next/navigation";
 import PopupDisease from "@/components/popUpDisease";
 import Button from '@mui/material/Button';
 import { axiosInstance } from "@/lib/axiosInstance";
@@ -21,25 +22,63 @@ import {
     getPotassiumAdvice,
 } from "@/utils/validation";
 
+const transformData = (data) => {
+    if (!Array.isArray(data)) return [];
+    return data.map((item, index) => ({
+        id: item._id,
+        transID: index + 1,
+        temp: item.temperature_id?.value || 0,
+        humid: item.air_humidity_id?.value || 0,
+        moisture: item.soil_moisture_id?.value || 0,
+        disease: item.disease || "ไม่พบ",
+        npk: {
+            nitrogen: item.nitrogen_id?.value || 0,
+            phosphorus: item.phosphorus_id?.value || 0,
+            potassium: item.potassium_id?.value || 0,
+        },
+    }));
+};
+
 const Detail: React.FC = () => {
     const { id } = useParams();
+    const searchParams = useSearchParams();
     const { selectedTime } = useDate();
     const [isPopupOpen, setIsPopupOpen] = useState(false);
     const [detailData, setDetailData] = useState<any>(null);
+    const [data, setData] = useState([]);
+
 
     useEffect(() => {
         const fetchEachID = async () => {
             try {
                 const response = await axiosInstance.get(`/api/getLoggerByID/${id}`);
                 console.log("Raw API Response:", response.data);
-                setDetailData(response.data);
+    
+                if (!response.data || Object.keys(response.data).length === 0) {
+                    console.error("No data found for the given ID.");
+                    setDetailData(null); // Set data to null for display
+                    setData([]);
+                    return;
+                }
+    
+                if (Array.isArray(response.data)) {
+                    const transformedData = transformData(response.data);
+                    console.log("Transformed Data for Table:", transformedData);
+                    setData(transformedData);
+                } else {
+                    console.warn("Response is not an array; using data directly.");
+                    setDetailData(response.data);
+                }
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching data:", error.message);
+                setDetailData(null);
+                setData([]);
             }
         };
-
+    
         fetchEachID();
     }, [id]);
+    
 
     if (!detailData) {
         return <p>ข้อมูลไม่พบสำหรับ ID นี้</p>;
@@ -76,34 +115,35 @@ const Detail: React.FC = () => {
                         </p>
                         <p className="text-2xl font-medium text-sky-700">เวลา {selectedTime} น.</p>
                     </div>
-                    <p className="font-semibold text-lg mt-2">ID {detailData.iot_id || "N/A"}</p>
+                    <p className="font-semibold text-lg mt-2">ID {detailData._id || "N/A"}</p>
 
                     <div className="flex flex-wrap gap-5 mt-5 h-full">
-                        {/* Temperature Section */}
-                        <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
-                            <div className="flex justify-between w-full">
-                                <div className="flex flex-col gap-2">
-                                    <p className="text-2xl font-bold">อุณหภูมิในดิน</p>
-                                    <p>ควรอยู่ระหว่าง 20-30 °C</p>
-                                    <p className="my-5">
-                                        ค่าปัจจุบัน:{" "}
-                                        <span
-                                            className={`text-3xl font-semibold ${
-                                                isTempOutOfRange(parseFloat(detailData?.temperature_id?.value || 0))
-                                                    ? "text-red-500"
-                                                    : "text-green-500"
-                                            }`}
-                                        >
-                                            {detailData?.air_humidity_id?.value || "ไม่มีข้อมูล"} °C
-                                        </span>
-                                    </p>
-                                    <p className="mt-2">
-                                        คำแนะนำ: {getTempAdvice(parseFloat(detailData?.temperature_id.value || 0))}
-                                    </p>
-                                </div>
-                                <img src="/temIcon.png" alt="Temperature Icon" className="w-fit h-fit cursor-pointer" />
+                    
+                    {/* Temperature Section */}
+                    <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
+                        <div className="flex justify-between w-full">
+                            <div className="flex flex-col gap-2">
+                                <p className="text-2xl font-bold">อุณหภูมิในดิน</p>
+                                <p>ควรอยู่ระหว่าง 20-30 °C</p>
+                                <p className="my-5">
+                                    ค่าปัจจุบัน:{" "}
+                                    <span
+                                        className={`text-3xl font-semibold ${
+                                            isTempOutOfRange(Number(detailData?.temperature_id?.value ?? 0))
+                                                ? "text-red-500"
+                                                : "text-green-500"
+                                        }`}
+                                    >
+                                        {detailData?.temperature_id?.value ?? "ไม่มีข้อมูล"} °C
+                                    </span>
+                                </p>
+                                <p className="mt-2">
+                                    คำแนะนำ: {getTempAdvice(Number(detailData?.temperature_id?.value ?? 0))}
+                                </p>
                             </div>
+                            <img src="/temIcon.png" alt="Temperature Icon" className="w-fit h-fit cursor-pointer" />
                         </div>
+</div>
 
                         {/* Air Humidity Section */}
                         <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
