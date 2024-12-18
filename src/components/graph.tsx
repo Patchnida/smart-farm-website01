@@ -13,13 +13,44 @@ import {
 import { MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 import { axiosInstance } from "@/lib/axiosInstance";
 
+// Group time into specific ranges
+const groupTime = (time: string) => {
+    const [hours] = time.split(":").map(Number); // Extract hour as number
+    if (hours >= 0 && hours < 6) return "00.00";
+    if (hours >= 6 && hours < 12) return "06.00";
+    if (hours >= 12 && hours < 18) return "12.00";
+    if (hours >= 18 && hours < 24) return "18.00";
+    return "00.00";
+};
+
+// Transform API data and group it by time
 const transformData = (data) => {
-    return data.map((item, index) => ({
-        id: index + 1,
-        temp: item.temperature_id?.value || 0,
-        humid: item.air_humidity_id?.value || 0, 
-        moisture: item.soil_moisture_id?.value || 0, 
-    }));
+    const groupedData = {
+        "00.00": [],
+        "06.00": [],
+        "12.00": [],
+        "18.00": [],
+    };
+
+    data.forEach((item, index) => {
+        const date = new Date(item.date);
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const time = `${hours}:${minutes}`; // Format HH:MM
+
+        // Group data into time slots
+        const group = groupTime(time);
+        groupedData[group].push({
+            id: index + 1,
+            time: time,
+            temp: item.temperature_id?.value || 0,
+            humid: item.air_humidity_id?.value || 0,
+            moisture: item.soil_moisture_id?.value || 0,
+        });
+    });
+
+    console.log("Grouped Data by Time:", groupedData); // Debugging grouped data
+    return groupedData;
 };
 
 function Graph({
@@ -35,12 +66,15 @@ function Graph({
     const fetchData = async () => {
         try {
             const response = await axiosInstance.get("/api/getByLogger");
-            // console.log("Raw API Response:", response.data);
 
-            const transformedData = transformData(response.data);
-            // console.log("Transformed Data for Chart:", transformedData);
+            // Transform and group data
+            const groupedData = transformData(response.data);
 
-            setData(transformedData);
+            // Use selected time to display the correct group
+            const filteredData = groupedData[selectedTime] || [];
+
+            console.log("Filtered Data for Time Group:", selectedTime, filteredData);
+            setData(filteredData);
         } catch (error) {
             console.error("Error fetching IoT data:", error);
             setData([]);
