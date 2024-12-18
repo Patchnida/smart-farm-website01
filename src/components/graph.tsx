@@ -24,6 +24,7 @@ const transformData = (data) => {
 
     data.forEach((item, index) => {
         const date = new Date(item.date);
+        const formattedDate = date.toISOString().split("T")[0];
         const hours = String(date.getHours()).padStart(2, "0");
         const minutes = String(date.getMinutes()).padStart(2, "0");
         const time = `${hours}:${minutes}`; 
@@ -33,6 +34,7 @@ const transformData = (data) => {
             id: item._id,
             transID: String(index + 1).padStart(4, "0"),
             time: time,
+            date: formattedDate,
             temp: item.temperature_id?.value || 0,
             humid: item.air_humidity_id?.value || 0,
             moisture: item.soil_moisture_id?.value || 0,
@@ -45,9 +47,11 @@ const transformData = (data) => {
 
 
 function Graph({
+    selectedDate,
     selectedTime,
     setSelectedTime,
 }: {
+    selectedDate: Date | null;
     selectedTime: string;
     setSelectedTime: (time: string) => void;
 }) {
@@ -57,14 +61,18 @@ function Graph({
     const fetchData = async () => {
         try {
             const response = await axiosInstance.get("/api/getByLogger");
-
-            // Transform and group data
             const groupedData = transformData(response.data);
 
-            // Use selected time to display the correct group
-            const filteredData = groupedData[selectedTime] || [];
+            // Filter data based on selectedDate and selectedTime
+            const filteredData =
+                groupedData[selectedTime]?.filter((item) => {
+                    if (!selectedDate) return false;
+                    const itemDate = new Date(item.date).toDateString();
+                    const selectedDateString = selectedDate.toDateString();
+                    return itemDate === selectedDateString;
+                }) || [];
 
-            console.log("Filtered Data for Time Group:", selectedTime, filteredData);
+            console.log("Filtered Data for Graph:", filteredData);
             setData(filteredData);
         } catch (error) {
             console.error("Error fetching IoT data:", error);
@@ -74,7 +82,7 @@ function Graph({
 
     useEffect(() => {
         fetchData();
-    }, [selectedTime]);
+    }, [selectedDate, selectedTime]);
 
     const handleDataTypeChange = (type: string) => {
         setDataType(type);
@@ -145,7 +153,13 @@ function Graph({
                                     }}
                                 />
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <Tooltip />
+                                <Tooltip
+                                    labelFormatter={(label, payload) => {
+                                        const item = payload?.[0]?.payload;
+                                        return item ? `Date: ${item.date}, Time: ${item.time}` : label;
+                                    }}
+                                />
+
                                 <Area
                                     type="monotone"
                                     dataKey={dataType}

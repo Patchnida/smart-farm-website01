@@ -8,7 +8,7 @@ import Table from "@/components/table";
 const Home: React.FC = () => {
     const { selectedDate, selectedTime, setSelectedTime } = useDate();
 
-    const formatDateToThai = (date: Date | undefined): string => {
+    const formatDateToThai = (date: Date | null): string => {
         if (!date) return "Invalid date";
 
         const dayNames = ["วันอาทิตย์", "วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์"];
@@ -40,10 +40,10 @@ const Home: React.FC = () => {
             <main className="flex flex-col w-full h-fit items-center">
                 <div className="w-11/12 h-5/6 my-5 p-10 bg-white rounded-lg shadow-sm">
                     <p className="text-3xl font-bold">{formatDateToThai(selectedDate)}</p>
-                    <Graph selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
+                    <Graph selectedDate={selectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
                 </div>
                 <div className="w-11/12 h-5/6 my-5 p-10 bg-white rounded-lg shadow-sm">
-                    <Table selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
+                    <Table selectedDate={selectedDate} selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
                 </div>
             </main>
         </div>
