@@ -120,7 +120,7 @@ function Graph({
                         No data available for the selected time.
                     </div>
                 ) : (
-                    <div className="flex-1">
+                    <div className="flex-1 mb-5">
                         <ResponsiveContainer width="100%" height={400}>
                             <AreaChart
                                 data={data}
@@ -137,7 +137,7 @@ function Graph({
                                     label={{
                                         value: "ID",
                                         position: "insideBottom",
-                                        offset: -10,
+                                        offset:-0,
                                     }}
                                 />
                                 <YAxis
@@ -150,7 +150,7 @@ function Graph({
                                                 : "ความชื้นในอากาศ (%)",
                                         angle: -90,
                                         position: "insideLeft",
-                                        offset: -10,
+                                        offset: 10,
                                     }}
                                 />
                                 <CartesianGrid strokeDasharray="3 3" />

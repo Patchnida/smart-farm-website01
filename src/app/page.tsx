@@ -38,7 +38,7 @@ const Home: React.FC = () => {
     return (
         <div className="grid grid-rows-[20px_1fr_20px] h-full">
             <main className="flex flex-col w-full h-fit items-center">
-                <div className="w-11/12 h-5/6 mt-5 p-10 bg-white rounded-lg shadow-sm">
+                <div className="w-11/12 h-5/6 my-5 p-10 bg-white rounded-lg shadow-sm">
                     <p className="text-3xl font-bold">{formatDateToThai(selectedDate)}</p>
                     <Graph selectedTime={selectedTime} setSelectedTime={setSelectedTime} />
                 </div>
