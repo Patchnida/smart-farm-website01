@@ -20,6 +20,16 @@ const getDefaultTimeOption = (): string => {
     return "00.00";
 };
 
+export const groupTime = (time: string): string => {
+    const [hours] = time.split(":").map(Number);
+    if (hours >= 0 && hours < 6) return "00.00";
+    if (hours >= 6 && hours < 12) return "06.00";
+    if (hours >= 12 && hours < 18) return "12.00";
+    if (hours >= 18 && hours < 24) return "18.00";
+    return "00.00";
+};
+
+
 export const DateProvider = ({ children }: { children: ReactNode }) => {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [selectedTime, setSelectedTime] = useState<string>(getDefaultTimeOption());
@@ -38,3 +48,4 @@ export const useDate = () => {
     }
     return context;
 };
+

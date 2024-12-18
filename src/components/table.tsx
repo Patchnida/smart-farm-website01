@@ -10,35 +10,58 @@ import {
     isPotassiumOutOfRange,
 } from "@/utils/validation";
 import PopupAddID from "./popUpAddID";
-import PopUpDelete from "./popUpDelete";
 
+import { groupTime } from "@/utils/DataContext";
 import { axiosInstance } from "@/lib/axiosInstance";
 
 const transformData = (data) => {
-    return data.map((item, index) => ({
-        id: item._id,
-        transID: String(index + 1).padStart(4, "0"), 
-        temp: item.temperature_id?.value || 0,
-        humid: item.air_humidity_id?.value || 0,
-        moisture: item.soil_moisture_id?.value || 0,
-        disease: item.disease || "ไม่พบ",
-        npk: {
-            nitrogen: item.nitrogen_id?.value || 0,
-            phosphorus: item.phosphorus_id?.value || 0,
-            potassium: item.potassium_id?.value || 0,
-        },
-    }));
+    const groupedData = {
+        "00.00": [],
+        "06.00": [],
+        "12.00": [],
+        "18.00": [],
+    };
+
+    data.forEach((item, index) => {
+        const date = new Date(item.date);
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const time = `${hours}:${minutes}`;
+
+        const group = groupTime(time);
+        groupedData[group].push({
+            id: item._id,
+            transID: String(index + 1).padStart(4, "0"),
+            time: time,
+            temp: item.temperature_id?.value || 0,
+            humid: item.air_humidity_id?.value || 0,
+            moisture: item.soil_moisture_id?.value || 0,
+            disease: item.disease || "ไม่พบ",
+            npk: {
+                nitrogen: item.nitrogen_id?.value || 0,
+                phosphorus: item.phosphorus_id?.value || 0,
+                potassium: item.potassium_id?.value || 0,
+            },
+        });
+    });
+
+    return groupedData;
 };
 
-function Table({ onClose }) {
+function Table({
+    selectedTime,
+    setSelectedTime,
+    onClose,
+}: {
+    selectedTime: string;
+    setSelectedTime: (time: string) => void;
+}) {
     const [data, setData] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 10;
 
     const [isPopUpOpen, setIsPopUpOpen] = useState(false);
-    const [isDeletePopUpOpen, setIsDeletePopUpOpen] = useState(false);
-    const [idToDelete, setIdToDelete] = useState<string | null>(null);
 
     const [newEntry, setNewEntry] = useState({
         id: "",
@@ -69,9 +92,10 @@ function Table({ onClose }) {
         fetchData();
     }, []);
 
-    const searchedRows = data.filter((row) =>
-        row.id.toString().startsWith(searchTerm)
-    );
+    const flatData = Object.values(data).flat();
+    const searchedRows = flatData
+        .filter((row) => row.transID.startsWith(searchTerm))
+        .filter((row) => !selectedTime || groupTime(row.time) === selectedTime);
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -89,10 +113,7 @@ function Table({ onClose }) {
         }
     };
 
-    const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        console.log("Save button clicked");
-    
+    const handleSave = async () => {
         try {
             const validEntry = {
                 temperature_id: { value: newEntry.temp },
@@ -104,21 +125,20 @@ function Table({ onClose }) {
                 disease: newEntry.disease,
                 date: new Date().toISOString(),
             };
-    
-            console.log("Payload:", validEntry);
+
             const response = await axiosInstance.post("/api/addLogger", validEntry);
-    
-            console.log("API Response:", response.data);
-    
             if (response && response.data) {
-                setData((prevData) => [...prevData, response.data]);
+                setData((prevData) => {
+                    const transformedData = transformData([response.data]);
+                    return { ...prevData, ...transformedData };
+                });
                 setIsPopUpOpen(false);
             }
         } catch (error) {
             console.error("Error saving data:", error.response?.data || error.message);
         }
     };
-    
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setNewEntry((prev) => ({ ...prev, [name]: value }));
@@ -144,7 +164,7 @@ function Table({ onClose }) {
                 </div>
             </div>
 
-            {data.length === 0 ? (
+            {flatData.length === 0 ? (
                 <div className="text-center mt-10 text-gray-500">No data available.</div>
             ) : (
                 <table className="w-full bg-white border border-gray-200 text-center">

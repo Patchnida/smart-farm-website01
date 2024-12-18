@@ -12,18 +12,8 @@ import {
 } from "recharts";
 import { MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 import { axiosInstance } from "@/lib/axiosInstance";
+import { groupTime } from "@/utils/DataContext";
 
-// Group time into specific ranges
-const groupTime = (time: string) => {
-    const [hours] = time.split(":").map(Number); // Extract hour as number
-    if (hours >= 0 && hours < 6) return "00.00";
-    if (hours >= 6 && hours < 12) return "06.00";
-    if (hours >= 12 && hours < 18) return "12.00";
-    if (hours >= 18 && hours < 24) return "18.00";
-    return "00.00";
-};
-
-// Transform API data and group it by time
 const transformData = (data) => {
     const groupedData = {
         "00.00": [],
@@ -36,12 +26,12 @@ const transformData = (data) => {
         const date = new Date(item.date);
         const hours = String(date.getHours()).padStart(2, "0");
         const minutes = String(date.getMinutes()).padStart(2, "0");
-        const time = `${hours}:${minutes}`; // Format HH:MM
+        const time = `${hours}:${minutes}`; 
 
-        // Group data into time slots
-        const group = groupTime(time);
+        const group = groupTime(time); 
         groupedData[group].push({
-            id: index + 1,
+            id: item._id,
+            transID: String(index + 1).padStart(4, "0"),
             time: time,
             temp: item.temperature_id?.value || 0,
             humid: item.air_humidity_id?.value || 0,
@@ -49,9 +39,10 @@ const transformData = (data) => {
         });
     });
 
-    console.log("Grouped Data by Time:", groupedData); // Debugging grouped data
+    // console.log("Grouped Data by Time:", groupedData);
     return groupedData;
 };
+
 
 function Graph({
     selectedTime,
@@ -133,7 +124,7 @@ function Graph({
                                     </linearGradient>
                                 </defs>
                                 <XAxis
-                                    dataKey="id"
+                                    dataKey="transID"
                                     label={{
                                         value: "ID",
                                         position: "insideBottom",
