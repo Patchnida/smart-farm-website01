@@ -334,9 +334,15 @@ const Detail: React.FC = () => {
             </div>
 
             <PopupDisease isOpen={isPopupOpen} onClose={handleClosePopup}>
-                <p>{detailData?.diseasePredict_id?.disease_id.DiseaseName}</p>
-                <p>{detailData?.diseasePredict_id?.disease_id.Recommend}</p>
-                <img src={detailData?.diseasePredict_id?.image} alt="Disease image" className="w-full h-auto" />                
+                <div className="flex justify-between border gap-5 p-5">
+                    <div className="w-6/12 h-full">
+                        <p>{detailData?.diseasePredict_id?.disease_id.DiseaseName}</p>
+                        <p>{detailData?.diseasePredict_id?.disease_id.Recommend}</p>
+                    </div>
+                    <div className="w-6/12 h-full">
+                        <img src={detailData?.diseasePredict_id?.image} alt="Disease image" className="w-full h-auto" />                
+                    </div>
+                </div>
             </PopupDisease>
         </div>
     );
