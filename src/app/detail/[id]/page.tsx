@@ -129,7 +129,7 @@ const Detail: React.FC = () => {
                         <div className="flex justify-between w-full">
                             <div className="flex flex-col gap-2">
                                 <p className="text-2xl font-bold">อุณหภูมิในดิน</p>
-                                <p>ควรอยู่ระหว่าง 20-30 °C</p>
+                                <p>ควรอยู่ระหว่าง 24-29 °C</p>
                                 <p className="my-5">
                                     ค่าปัจจุบัน:{" "}
                                     <span
@@ -142,13 +142,16 @@ const Detail: React.FC = () => {
                                         {detailData?.temperature_id?.value ?? "ไม่มีข้อมูล"} °C
                                     </span>
                                 </p>
-                                <p className="mt-2">
-                                    คำแนะนำ: {getTempAdvice(Number(detailData?.temperature_id?.value ?? 0))}
-                                </p>
-                            </div>
-                            <img src="/temIcon.png" alt="Temperature Icon" className="w-fit h-fit cursor-pointer" />
-                        </div>
-</div>
+                                <p className="mt-2 font-bold">คำแนะนำ:</p>
+                                <div>
+                                    {getTempAdvice(Number(detailData?.temperature_id?.value ?? 0)).map((advice, index) => (
+                                        <div key={index}>{advice}</div>
+                                    ))}
+                                </div>
+                                    </div>
+                                        <img src="/temIcon.png" alt="Temperature Icon" className="w-fit h-fit cursor-pointer" />
+                                    </div>
+                                </div>
 
                         {/* Air Humidity Section */}
                         <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">
@@ -168,9 +171,12 @@ const Detail: React.FC = () => {
                                             {detailData?.air_humidity_id?.value || "ไม่มีข้อมูล"} %
                                         </span>
                                     </p>
-                                    <p className="mt-2">
-                                        คำแนะนำ: {getHumidAdvice(parseFloat(detailData?.air_humidity_id?.value || 0))}
-                                    </p>
+                                    <p className="mt-2 font-bold">คำแนะนำ:</p>
+                                    <div>
+                                        {getHumidAdvice(Number(detailData?.air_humidity_id?.value ?? 0)).map((advice, index) => (
+                                            <div key={index}>{advice}</div>
+                                        ))}
+                                    </div>
                                 </div>
                                 <img src="/humidIcon.png" alt="Humidity Icon" className="w-fit h-fit cursor-pointer" />
                             </div>
@@ -181,7 +187,7 @@ const Detail: React.FC = () => {
                             <div className="flex justify-between w-full">
                                 <div className="flex flex-col gap-2">
                                     <p className="text-2xl font-bold">ความชื้นในดิน</p>
-                                    <p>ควรอยู่ระหว่าง 40-70 %</p>
+                                    <p>ควรอยู่ระหว่าง 24-80 %</p>
                                     <p className="my-5">
                                         ค่าปัจจุบัน:{" "}
                                         <span
