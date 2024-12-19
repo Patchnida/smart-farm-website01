@@ -136,7 +136,7 @@ function Table({
                             <th className="py-3 px-4 font-semibold text-gray-600">อุณหภูมิ (Temp)</th>
                             <th className="py-3 px-4 font-semibold text-gray-600">ความชื้นในอากาศ (Humid)</th>
                             <th className="py-3 px-4 font-semibold text-gray-600">ความชื้นในดิน (Moisture)</th>
-                            <th className="py-3 px-4 font-semibold text-gray-600">ความเสี่ยงในการเกิดโรค</th>
+                            {/* <th className="py-3 px-4 font-semibold text-gray-600">ความเสี่ยงในการเกิดโรค</th> */}
                             <th className="py-3 px-4 font-semibold text-gray-600">ค่าไนโตรเจน (N)</th>
                             <th className="py-3 px-4 font-semibold text-gray-600">ค่าฟอสฟอรัส (P)</th>
                             <th className="py-3 px-4 font-semibold text-gray-600">ค่าโพแทสเซียม (K)</th>
@@ -182,7 +182,7 @@ function Table({
                                 >
                                     {row.moisture} %
                                 </td>
-                                <td
+                                {/* <td
                                     className={`py-3 px-4 ${
                                         isDiseaseDetected(row.disease)
                                             ? "text-red-500 font-semibold"
@@ -190,7 +190,7 @@ function Table({
                                     }`}
                                 >
                                     {row.disease}
-                                </td>
+                                </td> */}
 
                                 <td
                                     className={`py-3 px-4 ${

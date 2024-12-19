@@ -56,7 +56,7 @@ const Detail: React.FC = () => {
             try {
                 const response = await axiosInstance.get(`/api/getLoggerByID/${id}`);
                 console.log("Raw API Response:", response.data);
-    
+
                 if (!response.data || Object.keys(response.data).length === 0) {
                     console.error("No data found for the given ID.");
                     setDetailData(null); // Set data to null for display
@@ -334,7 +334,9 @@ const Detail: React.FC = () => {
             </div>
 
             <PopupDisease isOpen={isPopupOpen} onClose={handleClosePopup}>
-                <p>ประวัติย้อนหลัง</p>
+                <p>{detailData?.diseasePredict_id?.disease_id.DiseaseName}</p>
+                <p>{detailData?.diseasePredict_id?.disease_id.Recommend}</p>
+                <img src={detailData?.diseasePredict_id?.image} alt="Disease image" className="w-full h-auto" />                
             </PopupDisease>
         </div>
     );
