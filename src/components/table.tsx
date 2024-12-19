@@ -37,7 +37,7 @@ const transformData = (data) => {
             temp: item.temperature_id?.value || 0,
             humid: item.air_humidity_id?.value || 0,
             moisture: item.soil_moisture_id?.value || 0,
-            disease: item.disease || "ไม่พบ",
+            disease: item.diseasePredict_id || "ไม่พบ",
             npk: {
                 nitrogen: item.nitrogen_id?.value || 0,
                 phosphorus: item.phosphorus_id?.value || 0,
@@ -66,6 +66,8 @@ function Table({
     const fetchData = async () => {
         try {
             const response = await axiosInstance.get("/api/getByLogger");
+
+            console.log("Raw data :",response);
             const transformedData = transformData(response.data);
             setData(transformedData);
         } catch (error) {
@@ -189,6 +191,7 @@ function Table({
                                 >
                                     {row.disease}
                                 </td>
+
                                 <td
                                     className={`py-3 px-4 ${
                                         isNitrogenOutOfRange(row.npk.nitrogen)

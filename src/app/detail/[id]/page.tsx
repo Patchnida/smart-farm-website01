@@ -218,26 +218,28 @@ const Detail: React.FC = () => {
                                         โรคที่พบ:{" "}
                                         <span
                                             className={`text-3xl font-semibold ${
-                                                detailData?.diseasePredict_id?.DiseaseName
+                                                detailData?.diseasePredict_id?.disease_id?.DiseaseName
                                                     ? "text-red-500"
                                                     : "text-green-500"
                                             }`}
                                         >
-                                            {detailData?.diseasePredict_id?.DiseaseName || "ไม่มีข้อมูล"}
+                                            {detailData?.diseasePredict_id?.disease_id?.DiseaseName || "ไม่มีข้อมูล"}
                                         </span>
                                     </p>
                                 </div>
                                 <img src="/diseaseIcon.png" alt="Disease Icon" className="w-fit h-fit cursor-pointer" />
                             </div>
-                            <p>คำแนะนำ : ต้องดึงมา</p>
+                            <p>{detailData?.diseasePredict_id?.disease_id?.Recommend || "ไม่มีคำแนะนำ"}</p>
                             <div className="flex justify-end mt-2">
                                 <Button
-                                onClick={handleOpenPopup}
-                                className='my-2 px-5 bg-gray-100 hover:bg-gray-200'    
-                                >ดูประวัติย้อนหลัง
+                                    onClick={handleOpenPopup}
+                                    className="my-2 px-5 bg-gray-100 hover:bg-gray-200"
+                                >
+                                    ดูประวัติย้อนหลัง
                                 </Button>
                             </div>
                         </div>
+
 
                         {/* NPK Section */}
                         <div className="flex flex-col w-full md:w-[48%] bg-white border border-gray-200 rounded-lg shadow-md p-10 text-lg flex-grow min-h-[250px]">

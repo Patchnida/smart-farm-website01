@@ -112,12 +112,12 @@ function NavBar() {
                 </button>
 
                 {/* Notifications Toggle Button */}
-                <button
+                {/* <button
                     className="flex justify-center items-center w-10 h-10 border border-gray-400 rounded-full cursor-pointer"
                     onClick={toggleNotifications}
                 >
                     <img src="/bell.png" alt="notification icon" className="w-6 h-6" />
-                </button>
+                </button> */}
 
                 {/* Calendar */}
                 {showCalendar && (
@@ -127,7 +127,7 @@ function NavBar() {
                 )}
 
                 {/* Notifications */}
-                {showNotifications && (
+                {/* {showNotifications && (
                     <div className="absolute top-16 right-0 w-80 max-h-80 shadow-lg border border-gray-200 rounded-md z-50 bg-white overflow-y-auto animate-fadeIn">
                         {(showAll ? notifications : notifications.slice(0, 3)).map(
                         (notification) => (
@@ -149,7 +149,7 @@ function NavBar() {
                             {showAll ? "แสดงน้อยกว่านี้" : "แสดงมากกว่านี้"}
                         </button>
                     </div>
-                )}
+                )} */}
             </div>
         </div>
     );

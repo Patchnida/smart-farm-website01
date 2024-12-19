@@ -57,11 +57,13 @@ export const getMoistureAdvice = (moisture: number): string[] => {
 };
 
 export const isDiseaseDetected = (disease: any): boolean => {
+    const detectableDiseases = ["leaf spot", "yellow leaf", "leaf curl", "whitefly"];
     if (typeof disease === "string") {
-        return disease.startsWith("เป็นโรค");
+        return detectableDiseases.includes(disease.toLowerCase());
     }
     return false;
 };
+
 
 export const isNitrogenOutOfRange = (nitrogen: number): boolean => nitrogen < 50 || nitrogen > 200;
 
